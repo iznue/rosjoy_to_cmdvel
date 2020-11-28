@@ -1,0 +1,8 @@
+<launch>
+  
+  <node name="rosjoy_2_cmdvel_node" pkg="rosjoy_to_cmdvel" type="rosjoy_to_cmdvel" output="screen">
+  </node>
+
+
+  <include file = "$(find rosjoy_to_cmdvel)/teleop_twist_joy/launch/teleop.launch" />
+</launch>
