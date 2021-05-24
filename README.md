@@ -7,4 +7,6 @@
 
 	git clone https://github.com/ros-teleop/teleop_twist_joy.git
 
+ros-kinetic-joy 패키지 설치 (ROS kinetic 버전일 경우)       
 	sudo apt-get install ros-kinetic-joy (if your ros version == kinetic version)
+
