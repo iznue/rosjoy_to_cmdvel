@@ -4,5 +4,5 @@
   </node>
 
 
-  <include file = "$(find rosjoy_to_cmdvel)/teleop_twist_joy/launch/teleop.launch" />
+  <include file = "$(find teleop_twist_joy)/launch/teleop.launch" />
 </launch>
