@@ -8,7 +8,7 @@ project(rosjoy_to_cmdvel)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  std_msgs roscpp geometry_msgs message_generation
+  std_msgs roscpp geometry_msgs message_generation can_test
 )
 
 ## System dependencies are found with CMake's conventions
@@ -102,8 +102,8 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   #INCLUDE_DIRS include
   LIBRARIES rosjoy_to_cmdvel
-  CATKIN_DEPENDS std_msgs roscpp
-  DEPENDS system_lib
+  CATKIN_DEPENDS std_msgs roscpp geometry_msgs can_test
+  #DEPENDS system_lib
 )
 
 ###########
