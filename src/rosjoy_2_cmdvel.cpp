@@ -245,6 +245,7 @@ int main(int argc, char **argv)
 
     cmd_vel_pub.publish(cmd_vel_msg);
     mode_pub.publish(mode_msg);
+    rpm_pub.publish(rpm_msg);
 
     ros::spinOnce();
 
