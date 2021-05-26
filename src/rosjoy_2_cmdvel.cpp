@@ -2,6 +2,7 @@
 #include "geometry_msgs/Twist.h"
 #include "sensor_msgs/Joy.h"
 #include "std_msgs/UInt8.h"
+#include "can_test/rpm.h"
 
 #define gear_ratio 26
 #define wheel_radius 0.08
@@ -216,6 +217,7 @@ int main(int argc, char **argv)
 
   ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
   ros::Publisher mode_pub = nh.advertise<std_msgs::UInt8>("/mode", 1000);
+  ros::Publisher rpm_pub = nh.advertise<can_test::rpm>("/rpm", 1000);
   ros::Subscriber joy_sub = nh.subscribe("joy", 100, JOYCallback);
 
   ros::Rate loop_rate(50);
@@ -223,6 +225,7 @@ int main(int argc, char **argv)
   {
     geometry_msgs::Twist cmd_vel_msg;
     std_msgs::UInt8 mode_msg;
+    can_test::rpm rpm_msg;
 
     cmd_vel_msg.linear.x = fb_vel;
     cmd_vel_msg.linear.y = 0.0;
@@ -232,6 +235,11 @@ int main(int argc, char **argv)
     cmd_vel_msg.angular.z = rl_vel;
 
     mode_msg.data = operating_mode;
+
+    rpm_msg.r_rpm =r_rpm;
+    rpm_msg.l_rpm =l_rpm;
+
+
 
 
 
