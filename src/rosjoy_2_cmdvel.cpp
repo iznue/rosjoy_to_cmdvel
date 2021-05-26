@@ -151,8 +151,8 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
 
     if(joymsg->axes[1]>0){l_step= 1;} //왼쪽 전진 :+ 0.0005
     if(joymsg->axes[1]<0){l_step=-1;} //후진 :-
-    if(joymsg->axes[2]>0){r_step= 1;} //오른쪽 전진 :+ 0.001
-    if(joymsg->axes[2]<0){r_step=-1;} //후진 :-
+    if(joymsg->axes[4]>0){r_step= 1;} //오른쪽 전진 :+ 0.001
+    if(joymsg->axes[4]<0){r_step=-1;} //후진 :-
     if(!((r_rpm+r_step > rpm_limit) && (r_rpm+r_step < -1*rpm_limit) && (l_rpm+l_step > rpm_limit) && (l_rpm+l_step < -1*rpm_limit))){
       r_rpm+=r_step;
       l_rpm+=l_step;
