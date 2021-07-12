@@ -1,7 +1,7 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
 #include "sensor_msgs/Joy.h"
-#include "std_msgs/UInt8.h"
+#include "std_msgs/Int8.h"
 #include "can_test/rpm.h"
 
 #define gear_ratio 26
@@ -12,6 +12,8 @@
 
 #define RPM_MODE 1
 #define CMD_VEL_MODE 2
+#define TORQUE_OFF 0
+#define RESET_VEL 3
 
 
 
@@ -80,11 +82,11 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->buttons[0]!=0&&joymsg->buttons[1]==0){  //(엑스)nothing, CAN통신 안보냄
+  if(joymsg->buttons[0]!=0&&joymsg->buttons[1]==0){  //(엑스)TQ_OFF
     butt_count[0]++;
     if(butt_count[0]>countNum){
       CAN_mode_num=0; 
-      mode=PWR_OFF;
+      operating_mode = TORQUE_OFF;
       butt_count_reset();
     }
   }
@@ -93,7 +95,13 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     butt_count[2]++;
     if(butt_count[2]>countNum){
       CAN_mode_num=3; 
-      mode=SM0505;
+      operating_mode = RESET_VEL;
+      fb_vel=0.0;
+      rl_vel=0.0;
+      r_rpm=0;
+      l_rpm=0;
+
+
       butt_count_reset();
     }
   }
@@ -173,6 +181,14 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     if(stop_count >step*10){r_rpm=0.0; l_rpm=0.0; stop_or_not=false;stop_count=0;butt_count_reset();ROS_INFO("STOP_END");}
 
   }
+  else if(operating_mode == RESET_VEL){
+
+    ROS_INFO("\nMODE : RESET_VEL \n");
+  }
+  else if(operating_mode == TORQUE_OFF){
+
+    ROS_INFO("\nMODE : TORQUE_OFF \n");
+  }
 }
 /*=========================================== JOY Callback함수 ============================================*/
 /*========================================================================================================*/
@@ -216,7 +232,7 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
 
   ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
-  ros::Publisher mode_pub = nh.advertise<std_msgs::UInt8>("/mode", 1000);
+  ros::Publisher mode_pub = nh.advertise<std_msgs::Int8>("/mode", 1000);
   ros::Publisher rpm_pub = nh.advertise<can_test::rpm>("/rpm", 1000);
   ros::Subscriber joy_sub = nh.subscribe("joy", 100, JOYCallback);
 
@@ -224,7 +240,7 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
     geometry_msgs::Twist cmd_vel_msg;
-    std_msgs::UInt8 mode_msg;
+    std_msgs::Int8 mode_msg;
     can_test::rpm rpm_msg;
 
     cmd_vel_msg.linear.x = fb_vel;
