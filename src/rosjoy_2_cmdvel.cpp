@@ -15,8 +15,8 @@
 #define TORQUE_OFF 0
 #define DYNAMIC_CMD_VEL_MODE 3
 
-#define MAX_LINEAR_VEL 2.0   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
-#define MAX_ANGULAR_VEL 3.0  //dynamic cmd_vel 모드에서 angular z 속도의 P gain에 해당
+#define MAX_LINEAR_VEL 1.0   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
+#define MAX_ANGULAR_VEL 1.5  //dynamic cmd_vel 모드에서 angular z 속도의 P gain에 해당
 
 
 
@@ -79,9 +79,9 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   }
 
 
-  if(joymsg->buttons[3]!=0){                         //(네모)operating mode = [rpm_mode]
-    butt_count[3]++;
-    if(butt_count[3]>countNum){
+  if(joymsg->buttons[0]!=0){                         //(네모)operating mode = [rpm_mode]
+    butt_count[0]++;
+    if(butt_count[0]>countNum){
       CAN_mode_num = 4;
       operating_mode = RPM_MODE;
       butt_count_reset();
@@ -89,9 +89,9 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->buttons[0]!=0&&joymsg->buttons[1]==0){  //(엑스)TQ_OFF
-    butt_count[0]++;
-    if(butt_count[0]>countNum){
+  if(joymsg->buttons[1]!=0&&joymsg->buttons[2]==0){  //(엑스)TQ_OFF
+    butt_count[1]++;
+    if(butt_count[1]>countNum){
       CAN_mode_num=0;
       operating_mode = TORQUE_OFF;
       butt_count_reset();
@@ -99,9 +99,9 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->buttons[2]!=0){                         //(세모) dynamic control mode(game mode)
-    butt_count[2]++;
-    if(butt_count[2]>countNum){
+  if(joymsg->buttons[3]!=0){                         //(세모) dynamic control mode(game mode)
+    butt_count[3]++;
+    if(butt_count[3]>countNum){
       CAN_mode_num=3;
       operating_mode = DYNAMIC_CMD_VEL_MODE;
 
@@ -109,9 +109,9 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->buttons[1]!=0&&joymsg->buttons[0]==0){  //(동그라미)operating mode = [cmd_vel_mode]
-    butt_count[1]++;
-    if(butt_count[1]>countNum){
+  if(joymsg->buttons[2]!=0&&joymsg->buttons[0]==0){  //(동그라미)operating mode = [cmd_vel_mode]
+    butt_count[2]++;
+    if(butt_count[2]>countNum){
       CAN_mode_num=1;
       operating_mode=CMD_VEL_MODE;
       butt_count_reset();
@@ -119,7 +119,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->buttons[0]!=0&&joymsg->buttons[1]!=0){  //(동그라미+엑스) TQ_OFF, 자연정지
+  if(joymsg->buttons[1]!=0&&joymsg->buttons[2]!=0){  //(동그라미+엑스) TQ_OFF, 자연정지
     butt_count[7]++;
     if(butt_count[7]>countNum){
       CAN_mode_num=7;
@@ -130,15 +130,15 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   }
 
 
-  /****오른쪽 버튼 [3]:네모, [2]:세모 ,[1]:O, [0]:X ********/
+  /****오른쪽 버튼 [0]:네모, [3]:세모 ,[2]:O, [1]:X ********/
   if(operating_mode == CMD_VEL_MODE){
 
     double fb=0.0,rl=0.0;
 
     if(joymsg->axes[1]>0){fb= 0.001;} //전진 :+ 0.0005
     if(joymsg->axes[1]<0){fb=-0.001;} //후진 :-
-    if(joymsg->axes[3]>0){rl= 0.002;} //좌회전:+ 0.001
-    if(joymsg->axes[3]<0){rl=-0.002;} //우회전:-
+    if(joymsg->axes[2]>0){rl= 0.002;} //좌회전:+ 0.001
+    if(joymsg->axes[2]<0){rl=-0.002;} //우회전:-
 
   if(rpm_limit_check(fb_vel+fb,rl_vel+rl)&&!stop_or_not){fb_vel+=fb; rl_vel+=rl;}
 
@@ -165,8 +165,8 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
 
     if(joymsg->axes[1]>0){l_step= 1;} //왼쪽 전진 :+ 0.0005
     if(joymsg->axes[1]<0){l_step=-1;} //후진 :-
-    if(joymsg->axes[4]>0){r_step= 1;} //오른쪽 전진 :+ 0.001
-    if(joymsg->axes[4]<0){r_step=-1;} //후진 :-
+    if(joymsg->axes[5]>0){r_step= 1;} //오른쪽 전진 :+ 0.001
+    if(joymsg->axes[5]<0){r_step=-1;} //후진 :-
     if(!((r_rpm+r_step > rpm_limit) && (r_rpm+r_step < -1*rpm_limit) && (l_rpm+l_step > rpm_limit) && (l_rpm+l_step < -1*rpm_limit))){
       r_rpm+=r_step;
       l_rpm+=l_step;
@@ -189,8 +189,8 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   else if(operating_mode == DYNAMIC_CMD_VEL_MODE){
 
     fb_vel = MAX_LINEAR_VEL*(joymsg->axes[1]);
-    rl_vel = MAX_ANGULAR_VEL*(joymsg->axes[3]);
-    ROS_INFO("\n(네모 : RPM모드)(동그라미 : CMD_VEL 모드)\n(세모 : DYNAMIC_CMD_VEL 모드)(엑스 : 토크 OFF)\nMODE : DYNAMIC_CMD_VEL_MODE \n<dynamic_cmd_vel>\n[linearX : %lf]\n[angularZ : %lf]",fb_vel,rl_vel);
+    rl_vel = MAX_ANGULAR_VEL*(joymsg->axes[2]);
+    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : DYNAMIC_CMD_VEL_MODE \n\n<dynamic_cmd_vel>\n[linearX : %lf]\n[angularZ : %lf]",fb_vel,rl_vel);
 
   }
   else if(operating_mode == TORQUE_OFF){
