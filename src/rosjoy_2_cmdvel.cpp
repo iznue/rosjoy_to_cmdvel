@@ -4,10 +4,10 @@
 #include "std_msgs/Int8.h"
 #include "can_test/rpm.h"
 
-#define gear_ratio 26
-#define wheel_radius 0.08
-#define distance 0.4
-#define rpm_limit 2500
+#define gear_ratio 30
+#define wheel_radius 0.08 //m
+#define distance 0.4      //m
+#define rpm_limit 2000
 #define countNum 10
 
 #define RPM_MODE 1
@@ -99,13 +99,14 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->buttons[3]!=0){                         //(세모) dynamic control mode(game mode)
+  if(joymsg->buttons[3]!=0){                         //(세모) operating mode = [dynamic control mode(game mode)]
     butt_count[3]++;
     if(butt_count[3]>countNum){
       CAN_mode_num=3;
       operating_mode = DYNAMIC_CMD_VEL_MODE;
 
       butt_count_reset();
+      set_vels_zero();
     }
   }
 
@@ -143,7 +144,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   if(rpm_limit_check(fb_vel+fb,rl_vel+rl)&&!stop_or_not){fb_vel+=fb; rl_vel+=rl;}
 
 
-  if(!stop_or_not){ROS_INFO("\n(네모 : RPM모드)(동그라미 : CMD_VEL 모드)\n(세모 : DYNAMIC_CMD_VEL 모드)(엑스 : 토크 OFF)\nMODE : cmd_vel_mode \n<cmd_vel>\n[linearX : %lf]\n[angularZ : %lf] ",fb_vel,rl_vel);}
+  if(!stop_or_not){ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : cmd_vel_mode \n\n<cmd_vel>\n[linearX : %lf]\n[angularZ : %lf] ",fb_vel,rl_vel);}
 
 
   if(stop_or_not){stop_count++;}
@@ -171,7 +172,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
       r_rpm+=r_step;
       l_rpm+=l_step;
     }
-    if(!stop_or_not){ROS_INFO("\n(네모 : RPM모드)(동그라미 : CMD_VEL 모드)\n(세모 : DYNAMIC_CMD_VEL 모드)(엑스 : 토크 OFF)\nMODE : rpm_mode \n<RPM>\n[LEFT : %d]\n[RIGHT : %d] ",l_rpm,r_rpm);}
+    if(!stop_or_not){ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : rpm_mode \n<RPM>\n[LEFT : %d]\n[RIGHT : %d] ",l_rpm,r_rpm);}
 
     if(stop_or_not){stop_count++;}
     if(stop_count== step){r_rpm=r_rpm*0.9; l_rpm = l_rpm*0.8;ROS_INFO("STOPING..");}    //int step을 줄이면 더 빨리 멈춤
@@ -195,7 +196,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   }
   else if(operating_mode == TORQUE_OFF){
 
-    ROS_INFO("\n(네모 : RPM모드)(동그라미 : CMD_VEL 모드)\n(세모 : DYNAMIC_CMD_VEL 모드)(엑스 : 토크 OFF)\nMODE : TORQUE_OFF \n");
+    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : TORQUE_OFF \n");
   }
 }
 /*=========================================== JOY Callback함수 ============================================*/
