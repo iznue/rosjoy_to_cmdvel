@@ -14,9 +14,10 @@
 #define CMD_VEL_MODE 2
 #define TORQUE_OFF 0
 #define DYNAMIC_CMD_VEL_MODE 3
+#define ONE_HAND 4
 
-#define MAX_LINEAR_VEL 1.0   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
-#define MAX_ANGULAR_VEL 1.5  //dynamic cmd_vel 모드에서 angular z 속도의 P gain에 해당
+#define MAX_LINEAR_VEL 1.25   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
+#define MAX_ANGULAR_VEL 2  //dynamic cmd_vel 모드에서 angular z 속도의 P gain에 해당
 
 
 
@@ -79,7 +80,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   }
 
 
-  if(joymsg->buttons[0]!=0){                         //(네모)operating mode = [rpm_mode]
+  if(joymsg->buttons[0]!=0 && joymsg->buttons[2]==0){                         //(네모)operating mode = [rpm_mode]
     butt_count[0]++;
     if(butt_count[0]>countNum){
       CAN_mode_num = 4;
@@ -125,6 +126,15 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     if(butt_count[7]>countNum){
       CAN_mode_num=7;
       mode=TQ_OFF;
+      butt_count_reset();
+      set_vels_zero();
+    }
+  }
+  if(joymsg->buttons[2]!=0&&joymsg->buttons[0]!=0){  //(동그라미_ nemo)operating mode = [cmd_vel_mode]
+    butt_count[8]++;
+    if(butt_count[8]>countNum){
+      CAN_mode_num=8;
+      operating_mode=ONE_HAND;
       butt_count_reset();
       set_vels_zero();
     }
@@ -192,6 +202,13 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     fb_vel = MAX_LINEAR_VEL*(joymsg->axes[1]);
     rl_vel = MAX_ANGULAR_VEL*(joymsg->axes[2]);
     ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : DYNAMIC_CMD_VEL_MODE \n\n<dynamic_cmd_vel>\n[linearX : %lf]\n[angularZ : %lf]",fb_vel,rl_vel);
+
+  }
+  else if(operating_mode == ONE_HAND){
+
+    fb_vel = MAX_LINEAR_VEL*(joymsg->axes[1]);
+    rl_vel = MAX_ANGULAR_VEL*(joymsg->axes[0]);
+    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : ONE_HAND_MODE \n\n<One_Hand_cmd_vel>\n[linearX : %lf]\n[angularZ : %lf]",fb_vel,rl_vel);
 
   }
   else if(operating_mode == TORQUE_OFF){
