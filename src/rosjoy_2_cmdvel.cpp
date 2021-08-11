@@ -3,6 +3,7 @@
 #include "sensor_msgs/Joy.h"
 #include "std_msgs/Int8.h"
 
+
 #define gear_ratio 30
 #define wheel_radius 0.08 //m
 #define distance 0.4      //m
@@ -15,8 +16,24 @@
 #define DYNAMIC_CMD_VEL_MODE 3
 #define ONE_HAND 4
 
+/******* 조이스틱 속도 스케일링**********/
 #define MAX_LINEAR_VEL 1.25   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
 #define MAX_ANGULAR_VEL 2  //dynamic cmd_vel 모드에서 angular z 속도의 P gain에 해당
+
+
+/********조이스틱 Axes & Butten*******/
+#define AXES_LEFT_UPDOWN 1
+#define AXES_LEFT_RL -1
+
+#define AXES_RIGHT_UPDOWN -1
+#define AXES_RIGHT_RL 3
+
+#define BTTN_TRIANGLE 2
+#define BTTN_SQUARE 3
+#define BTTN_X 0
+#define BTTN_O 1
+
+
 
 
 
@@ -79,7 +96,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   }
 
 
-  if(joymsg->buttons[0]!=0 && joymsg->buttons[2]==0){                         //(네모)operating mode = [rpm_mode]
+  if(joymsg->buttons[BTTN_SQUARE]!=0 && joymsg->buttons[2]==0){                         //(네모)operating mode = [rpm_mode]
     butt_count[0]++;
     if(butt_count[0]>countNum){
       CAN_mode_num = 4;
@@ -89,7 +106,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->buttons[1]!=0&&joymsg->buttons[2]==0){  //(엑스)TQ_OFF
+  if(joymsg->buttons[BTTN_X]!=0&&joymsg->buttons[BTTN_O]==0){  //(엑스)TQ_OFF
     butt_count[1]++;
     if(butt_count[1]>countNum){
       CAN_mode_num=0;
@@ -99,7 +116,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->buttons[3]!=0){                         //(세모) operating mode = [dynamic control mode(game mode)]
+  if(joymsg->buttons[BTTN_TRIANGLE]!=0){                         //(세모) operating mode = [dynamic control mode(game mode)]
     butt_count[3]++;
     if(butt_count[3]>countNum){
       CAN_mode_num=3;
@@ -110,7 +127,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->buttons[2]!=0&&joymsg->buttons[0]==0){  //(동그라미)operating mode = [cmd_vel_mode]
+  if(joymsg->buttons[BTTN_O]!=0&&joymsg->buttons[BTTN_SQUARE]==0){  //(동그라미)operating mode = [cmd_vel_mode]
     butt_count[2]++;
     if(butt_count[2]>countNum){
       CAN_mode_num=1;
@@ -120,7 +137,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->buttons[1]!=0&&joymsg->buttons[2]!=0){  //(동그라미+엑스) TQ_OFF, 자연정지
+  if(joymsg->buttons[BTTN_X]!=0&&joymsg->buttons[BTTN_O]!=0){  //(동그라미+엑스) TQ_OFF, 자연정지
     butt_count[7]++;
     if(butt_count[7]>countNum){
       CAN_mode_num=7;
@@ -129,7 +146,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
       set_vels_zero();
     }
   }
-  if(joymsg->buttons[2]!=0&&joymsg->buttons[0]!=0){  //(동그라미_ nemo)operating mode = [cmd_vel_mode]
+  if(joymsg->buttons[BTTN_O]!=0&&joymsg->buttons[BTTN_SQUARE]!=0){  //(동그라미+네모)operating mode = [cmd_vel_mode]
     butt_count[8]++;
     if(butt_count[8]>countNum){
       CAN_mode_num=8;
@@ -145,10 +162,10 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
 
     double fb=0.0,rl=0.0;
 
-    if(joymsg->axes[1]>0){fb= 0.001;} //전진 :+ 0.0005
-    if(joymsg->axes[1]<0){fb=-0.001;} //후진 :-
-    if(joymsg->axes[2]>0){rl= 0.002;} //좌회전:+ 0.001
-    if(joymsg->axes[2]<0){rl=-0.002;} //우회전:-
+    if(joymsg->axes[AXES_LEFT_UPDOWN]>0){fb= 0.001;} //전진 :+ 0.0005
+    if(joymsg->axes[AXES_LEFT_UPDOWN]<0){fb=-0.001;} //후진 :-
+    if(joymsg->axes[AXES_RIGHT_RL]>0){rl= 0.002;} //좌회전:+ 0.001
+    if(joymsg->axes[AXES_RIGHT_RL]<0){rl=-0.002;} //우회전:-
 
   if(rpm_limit_check(fb_vel+fb,rl_vel+rl)&&!stop_or_not){fb_vel+=fb; rl_vel+=rl;}
 
@@ -198,8 +215,8 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   }
   else if(operating_mode == DYNAMIC_CMD_VEL_MODE){
 
-    fb_vel = MAX_LINEAR_VEL*(joymsg->axes[1]);
-    rl_vel = MAX_ANGULAR_VEL*(joymsg->axes[2]);
+    fb_vel = MAX_LINEAR_VEL*(joymsg->axes[AXES_LEFT_UPDOWN]);
+    rl_vel = MAX_ANGULAR_VEL*(joymsg->axes[AXES_RIGHT_RL]);
     ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : DYNAMIC_CMD_VEL_MODE \n\n<dynamic_cmd_vel>\n[linearX : %lf]\n[angularZ : %lf]",fb_vel,rl_vel);
 
   }
