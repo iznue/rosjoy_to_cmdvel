@@ -26,12 +26,12 @@
 #define AXES_LEFT_RL -1
 
 #define AXES_RIGHT_UPDOWN -1
-#define AXES_RIGHT_RL 3
+#define AXES_RIGHT_RL 2
 
-#define BTTN_TRIANGLE 2
-#define BTTN_SQUARE 3
-#define BTTN_X 0
-#define BTTN_O 1
+#define BTTN_TRIANGLE 3
+#define BTTN_SQUARE 0
+#define BTTN_X 1
+#define BTTN_O 2
 
 
 
