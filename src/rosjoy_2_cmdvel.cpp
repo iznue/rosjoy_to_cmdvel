@@ -10,11 +10,14 @@
 #define rpm_limit 2000
 #define countNum 10
 
+
+//modes
 #define RPM_MODE 1
 #define CMD_VEL_MODE 2
 #define TORQUE_OFF 0
 #define DYNAMIC_CMD_VEL_MODE 3
 #define ONE_HAND 4
+#define JoyNotUse 5
 
 /******* 조이스틱 속도 스케일링**********/
 #define MAX_LINEAR_VEL 1.25   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
@@ -32,6 +35,11 @@
 #define BTTN_SQUARE 0
 #define BTTN_X 1
 #define BTTN_O 2
+
+#define BTTN_AXES_UPDOWN 7
+#define BTTN_AXES_LEFTRIGHT 6
+
+
 
 
 
@@ -64,7 +72,7 @@ static char TQ_OFF[]="TQ_OFF";
 
 static char*mode=NULL;
 
-static int operating_mode = 2;    //cmd_vel 모드로 시작
+static int operating_mode = 5;    //JoyNotUse 모드로 시작
 
 /*========================================================================================================*/
 /*=========================================== JOY Callback함수 ============================================*/
@@ -156,6 +164,16 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
+  if(joymsg->axes[BTTN_AXES_UPDOWN]==-1){  //(왼쪽 화살표 버튼)operating mode = [joy_not_use]
+    butt_count[9]++;
+    if(butt_count[9]>countNum){
+      CAN_mode_num=9;
+      operating_mode=JoyNotUse;
+      butt_count_reset();
+      set_vels_zero();
+    }
+  }
+
 
   /****오른쪽 버튼 [0]:네모, [3]:세모 ,[2]:O, [1]:X ********/
   if(operating_mode == CMD_VEL_MODE){
@@ -231,6 +249,10 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
 
     ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : TORQUE_OFF \n");
   }
+  else if(operating_mode == JoyNotUse){
+
+    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : JoyNotUse \n");
+  }
 }
 /*=========================================== JOY Callback함수 ============================================*/
 /*========================================================================================================*/
@@ -257,7 +279,7 @@ bool rpm_limit_check(double linear_vel,double angular_vel)
 void butt_count_reset(void)
 {
   int i;
-  for(i=0;i<10;i++){butt_count[i]=0;}
+  for(i=0;i<(sizeof(butt_count)/sizeof(int));i++){butt_count[i]=0;}
 }
 /*=========== Butt_count_reset =============*/
 /********************************************/
@@ -303,7 +325,9 @@ int main(int argc, char **argv)
 
     mode_msg.data = operating_mode;
 
-    cmd_vel_pub.publish(cmd_vel_msg);
+    if(!(operating_mode == JoyNotUse)){
+      cmd_vel_pub.publish(cmd_vel_msg);
+    }
     mode_pub.publish(mode_msg);
 
     ros::spinOnce();
