@@ -63,6 +63,7 @@ static int butt_count[10]={0,0,0,0,0,0,0,0,0,0};
 bool rpm_limit_check(double linear_vel,double angular_vel);
 void butt_count_reset(void);
 void set_vels_zero(void);
+
 //void print_status(int a);
 static char PWR_ON[]="PWR_ON";
 static char PWR_OFF[]="PWR_OFF";
@@ -152,6 +153,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
       mode=TQ_OFF;
       butt_count_reset();
       set_vels_zero();
+
     }
   }
   if(joymsg->buttons[BTTN_O]!=0&&joymsg->buttons[BTTN_SQUARE]!=0){  //(동그라미+네모)operating mode = [cmd_vel_mode]
@@ -161,6 +163,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
       operating_mode=ONE_HAND;
       butt_count_reset();
       set_vels_zero();
+
     }
   }
 
@@ -168,7 +171,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     butt_count[9]++;
     if(butt_count[9]>countNum){
       CAN_mode_num=9;
-      operating_mode=JoyNotUse;
+      operating_mode=JoyNotUse;  //use joystick to control Drok_arm
       butt_count_reset();
       set_vels_zero();
     }
@@ -295,10 +298,6 @@ void set_vels_zero(void)
   l_rpm=0;
 }
 
-
-
-
-
 /*===========================================================================*/
 /*============================= main 함수 ====================================*/
 int main(int argc, char **argv)
@@ -307,7 +306,9 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
 
   ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
-  ros::Publisher mode_pub = nh.advertise<std_msgs::Int8>("/mode", 1000);
+  ros::Publisher mode_pub = nh.advertise<std_msgs::Int8>("/mode", 10);
+  ros::Publisher teleop_onoff_pub = nh.advertise<std_msgs::Int8>("/teleop_onoff", 10);
+
   ros::Subscriber joy_sub = nh.subscribe("joy", 100, JOYCallback);
 
   ros::Rate loop_rate(50);
@@ -315,6 +316,7 @@ int main(int argc, char **argv)
   {
     geometry_msgs::Twist cmd_vel_msg;
     std_msgs::Int8 mode_msg;
+    std_msgs::Int8 teleop_onoff_msg;
 
     cmd_vel_msg.linear.x = fb_vel;
     cmd_vel_msg.linear.y = 0.0;
@@ -327,8 +329,13 @@ int main(int argc, char **argv)
 
     if(!(operating_mode == JoyNotUse)){
       cmd_vel_pub.publish(cmd_vel_msg);
+      teleop_onoff_msg.data = 1;
+    }
+    else{ //operating_mode == Joy_not_use    -> use joystick to control Drok_arm
+      teleop_onoff_msg.data = 2;
     }
     mode_pub.publish(mode_msg);
+    teleop_onoff_pub.publish(teleop_onoff_msg);
 
     ros::spinOnce();
 
