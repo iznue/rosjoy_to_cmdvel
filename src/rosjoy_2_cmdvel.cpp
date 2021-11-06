@@ -2,6 +2,15 @@
 #include "geometry_msgs/Twist.h"
 #include "sensor_msgs/Joy.h"
 #include "std_msgs/Int8.h"
+#include <stdio.h>
+
+#ifdef __linux__
+#include <unistd.h>
+#include <fcntl.h>
+#include <termios.h>
+#elif defined(_WIN32) || defined(_WIN64)
+#include <conio.h>
+#endif
 
 
 #define gear_ratio 30
@@ -25,19 +34,19 @@
 
 
 /********조이스틱 Axes & Butten*******/
-#define AXES_LEFT_UPDOWN 1
-#define AXES_LEFT_RL -1
+/*#define*/ int AXES_LEFT_UPDOWN = 1;
+//#define AXES_LEFT_RL -1
 
-#define AXES_RIGHT_UPDOWN -1
-#define AXES_RIGHT_RL 2
+//#define AXES_RIGHT_UPDOWN -1
+/*#define*/ int AXES_RIGHT_RL = 3;
 
-#define BTTN_TRIANGLE 3
-#define BTTN_SQUARE 0
-#define BTTN_X 1
-#define BTTN_O 2
+/*#define*/ int BTTN_TRIANGLE = 2;
+/*#define*/ int BTTN_SQUARE = 3;
+/*#define*/ int BTTN_X = 0;
+/*#define*/ int BTTN_O = 1;
 
-#define BTTN_AXES_UPDOWN 7
-#define BTTN_AXES_LEFTRIGHT 6
+/*#define*/ int BTTN_AXES_UPDOWN = 7;
+/*#define*/ int BTTN_AXES_LEFTRIGHT = 6;
 
 
 
@@ -74,6 +83,75 @@ static char TQ_OFF[]="TQ_OFF";
 static char*mode=NULL;
 
 static int operating_mode = 5;    //JoyNotUse 모드로 시작
+
+int bttn_set_num=-1;
+int axes_set_num=-1;
+
+int getch()
+{
+#ifdef __linux__
+  struct termios oldt, newt;
+  int ch;
+  tcgetattr(STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag &= ~(ICANON | ECHO);
+  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+  ch = getchar();
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  return ch;
+#elif defined(_WIN32) || defined(_WIN64)
+  return _getch();
+#endif
+}
+
+
+
+int kbhit(void)
+{
+#ifdef __linux__
+  struct termios oldt, newt;
+  int ch;
+  int oldf;
+
+  tcgetattr(STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag &= ~(ICANON | ECHO);
+  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+  oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+  fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+  ch = getchar();
+
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  fcntl(STDIN_FILENO, F_SETFL, oldf);
+
+  if (ch != EOF)
+  {
+    ungetc(ch, stdin);
+    return 1;
+  }
+
+  return 0;
+#elif defined(_WIN32) || defined(_WIN64)
+  return _kbhit();
+#endif
+}
+
+
+void JOY_setting_Callback(const sensor_msgs::Joy::ConstPtr& joymsg){
+
+ for(int i = 0;i<8;i++){
+   if(joymsg->buttons[i]!=0){
+     bttn_set_num = i;
+   }
+ }
+ for(int j=0;j<4;j++){
+   if(joymsg->axes[j]>0.5 || joymsg->axes[j]<-0.5){
+    axes_set_num = j;
+   }
+ }
+}
+
 
 /*========================================================================================================*/
 /*=========================================== JOY Callback함수 ============================================*/
@@ -167,7 +245,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
-  if(joymsg->axes[BTTN_AXES_UPDOWN]==-1){  //(왼쪽 화살표 버튼)operating mode = [joy_not_use]
+  if(joymsg->axes[BTTN_AXES_LEFTRIGHT]==1){  //(왼쪽 화살표 버튼 [<<])operating mode = [joy_not_use]
     butt_count[9]++;
     if(butt_count[9]>countNum){
       CAN_mode_num=9;
@@ -269,7 +347,7 @@ bool rpm_limit_check(double linear_vel,double angular_vel)
 {
   int R_RPM = (gear_ratio*30.0*((2*linear_vel) + (distance*angular_vel))/(2*wheel_radius*3.141593));
   int L_RPM = (gear_ratio*30.0*((2*linear_vel) - (distance*angular_vel))/(2*wheel_radius*3.141593));
-  if(R_RPM>rpm_limit||L_RPM>rpm_limit||R_RPM<-1*rpm_limit||L_RPM<-1*rpm_limit){return false;}  //rpm_linit=2500
+  if(R_RPM>rpm_limit||L_RPM>rpm_limit||R_RPM<-1*rpm_limit||L_RPM<-1*rpm_limit){return false; ROS_WARN("rpm_limit!!");}  //rpm_linit=2500
   else {return true;}
 }
 /*========================================== RPM_Limit_check 함수 ==============================================*/
@@ -309,9 +387,113 @@ int main(int argc, char **argv)
   ros::Publisher mode_pub = nh.advertise<std_msgs::Int8>("/mode", 10);
   ros::Publisher teleop_onoff_pub = nh.advertise<std_msgs::Int8>("/teleop_onoff", 10);
 
-  ros::Subscriber joy_sub = nh.subscribe("joy", 100, JOYCallback);
+  //ros::Subscriber joy_sub = nh.subscribe("joy", 100, JOYCallback);
 
   ros::Rate loop_rate(50);
+
+
+  char ch='n';
+  printf("조이스틱 버튼을 재설정 하시겠습니까? [yN] : ");
+  for(int k = 0;k<200;k++){  //4초 대기
+    if(kbhit()){
+      ch = getch();
+      break;
+    }
+    loop_rate.sleep();
+  }
+  if(ch == 'y' || ch=='Y'){
+    ros::Subscriber joy_setting_sub = nh.subscribe("joy", 100, JOY_setting_Callback);
+
+    printf("\n삼각형 버튼을 누르세요\n");
+    for(int k = 0;k<200;k++){ //4초 대기
+      ros::spinOnce();
+      loop_rate.sleep();
+
+    }
+    if(bttn_set_num != -1){
+      BTTN_TRIANGLE = bttn_set_num;
+      bttn_set_num = -1;
+    }
+    printf("\n사각형 버튼을 누르세요\n");
+    for(int k = 0;k<200;k++){ //4초 대기
+      ros::spinOnce();
+      loop_rate.sleep();
+
+    }
+    if(bttn_set_num != -1){
+      BTTN_SQUARE = bttn_set_num;
+      bttn_set_num = -1;
+    }
+    printf("\n동그라미 버튼을 누르세요\n");
+    for(int k = 0;k<200;k++){ //4초 대기
+      ros::spinOnce();
+      loop_rate.sleep();
+
+    }
+    if(bttn_set_num != -1){
+      BTTN_O = bttn_set_num;
+      bttn_set_num = -1;
+    }
+    printf("\n엑스 버튼을 누르세요\n");
+    for(int k = 0;k<200;k++){ //4초 대기
+      ros::spinOnce();
+      loop_rate.sleep();
+
+    }
+    if(bttn_set_num != -1){
+      BTTN_X = bttn_set_num;
+      bttn_set_num = -1;
+    }
+    printf("\n왼쪽화살표 버튼을 누르세요\n");
+    for(int k = 0;k<200;k++){ //4초 대기
+      ros::spinOnce();
+      loop_rate.sleep();
+
+    }
+    if(bttn_set_num != -1){
+      BTTN_AXES_LEFTRIGHT = bttn_set_num;
+      bttn_set_num = -1;
+    }
+
+    printf("\n위쪽화살표 버튼을 누르세요\n");
+    for(int k = 0;k<200;k++){ //4초 대기
+      ros::spinOnce();
+      loop_rate.sleep();
+
+    }
+    if(bttn_set_num != -1){
+      BTTN_AXES_UPDOWN = bttn_set_num;
+      bttn_set_num = -1;
+    }
+    printf("\n왼쪽 조이스틱을 위로 미세요\n");
+    for(int k = 0;k<200;k++){ //4초 대기
+      ros::spinOnce();
+      loop_rate.sleep();
+
+    }
+    if(axes_set_num != -1){
+      AXES_LEFT_UPDOWN = axes_set_num;
+      bttn_set_num = -1;
+    }
+    printf("\n오른쪽 조이스틱을 왼쪽으로 미세요\n");
+    for(int k = 0;k<200;k++){ //4초 대기
+      ros::spinOnce();
+      loop_rate.sleep();
+
+    }
+    if(axes_set_num != -1){
+      AXES_RIGHT_RL = axes_set_num;
+      bttn_set_num = -1;
+    }
+
+  joy_setting_sub.shutdown();
+  }
+  else{
+    printf("\n기존 설정된 조이스팅 세팅값을 사용합니다.\n");
+  }
+
+  ros::Subscriber joy_sub = nh.subscribe("joy", 100, JOYCallback);
+
   while (ros::ok())
   {
     geometry_msgs::Twist cmd_vel_msg;
