@@ -145,7 +145,7 @@ void JOY_setting_Callback(const sensor_msgs::Joy::ConstPtr& joymsg){
      bttn_set_num = i;
    }
  }
- for(int j=0;j<4;j++){
+ for(int j=0;j<7;j++){
    if(joymsg->axes[j]>0.5 || joymsg->axes[j]<-0.5){
     axes_set_num = j;
    }
@@ -451,7 +451,7 @@ int main(int argc, char **argv)
 
     }
     if(bttn_set_num != -1){
-      BTTN_AXES_LEFTRIGHT = bttn_set_num;
+      BTTN_AXES_LEFTRIGHT = axes_set_num;
       bttn_set_num = -1;
     }
 
@@ -462,7 +462,7 @@ int main(int argc, char **argv)
 
     }
     if(bttn_set_num != -1){
-      BTTN_AXES_UPDOWN = bttn_set_num;
+      BTTN_AXES_UPDOWN = axes_set_num;
       bttn_set_num = -1;
     }
     printf("\n왼쪽 조이스틱을 위로 미세요\n");
