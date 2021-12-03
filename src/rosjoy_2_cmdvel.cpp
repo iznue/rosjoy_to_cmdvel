@@ -27,6 +27,7 @@
 #define DYNAMIC_CMD_VEL_MODE 3
 #define ONE_HAND 4
 #define JoyNotUse 5
+#define Back_Hand_Control_ 6
 
 /******* 조이스틱 속도 스케일링**********/
 #define MAX_LINEAR_VEL 1.0//1.25   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
@@ -67,7 +68,7 @@ static const int step=4; //stop상황에서의 count step
 static int stop_count=0;
 static bool stop_or_not = false;
 static uint8_t CAN_mode_num = 0;   //모드변경. 각각의 CAN 배열에 해당하는 번호를 의미
-static int butt_count[10]={0,0,0,0,0,0,0,0,0,0};
+static int butt_count[11]={0,0,0,0,0,0,0,0,0,0,0};
 
 bool rpm_limit_check(double linear_vel,double angular_vel);
 void butt_count_reset(void);
@@ -255,6 +256,16 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     }
   }
 
+  if(joymsg->axes[BTTN_AXES_LEFTRIGHT]== -1){  //(dhfms쪽 화살표 버튼 [>>])operating mode = [back_hand_control]
+    butt_count[10]++;
+    if(butt_count[10]>countNum){
+      CAN_mode_num=10;
+      operating_mode=Back_Hand_Control_;  //use joystick to control Back_hand
+      butt_count_reset();
+      set_vels_zero();
+    }
+  }
+
 
   /****오른쪽 버튼 [0]:네모, [3]:세모 ,[2]:O, [1]:X ********/
   if(operating_mode == CMD_VEL_MODE){
@@ -333,6 +344,11 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   else if(operating_mode == JoyNotUse){
 
     ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : JoyNotUse \n");
+  }
+
+  else if(operating_mode == Back_Hand_Control_){
+
+    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : Back_Hand_Control_ \n");
   }
 }
 /*=========================================== JOY Callback함수 ============================================*/
@@ -509,7 +525,12 @@ int main(int argc, char **argv)
 
     mode_msg.data = operating_mode;
 
-    if(!(operating_mode == JoyNotUse)){
+
+
+    if(operating_mode == Back_Hand_Control_){
+      teleop_onoff_msg.data = 3;
+    }
+    else if(!(operating_mode == JoyNotUse)){
       cmd_vel_pub.publish(cmd_vel_msg);
       teleop_onoff_msg.data = 1;
     }
