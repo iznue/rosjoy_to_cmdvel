@@ -82,7 +82,7 @@ static char TQ_OFF[]="TQ_OFF";
 
 static char*mode=NULL;
 
-static int operating_mode = 5;    //JoyNotUse 모드로 시작
+static int operating_mode = JoyNotUse;    //JoyNotUse(5) 모드로 시작
 
 int bttn_set_num=-1;
 int axes_set_num=-1;

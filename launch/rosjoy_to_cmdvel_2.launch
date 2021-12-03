@@ -1,7 +1,7 @@
 <launch>
   
   <node name="rosjoy_2_cmdvel_node" pkg="rosjoy_to_cmdvel" type="rosjoy_to_cmdvel" output="screen">
-<!--<remap from="cmd_vel" to="cmd_vel_2"/>-->
+<remap from="cmd_vel" to="cmd_vel_2"/>
 </node>
 
 
