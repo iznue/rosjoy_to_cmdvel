@@ -492,7 +492,7 @@ int main(int argc, char **argv)
     printf("\n기존 설정된 조이스팅 세팅값을 사용합니다.\n");
   }
 
-  ros::Subscriber joy_sub = nh.subscribe("joy", 100, JOYCallback);
+  ros::Subscriber joy_sub = nh.subscribe("joy", 10, JOYCallback);
 
   while (ros::ok())
   {
