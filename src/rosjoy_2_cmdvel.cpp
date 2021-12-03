@@ -29,8 +29,8 @@
 #define JoyNotUse 5
 
 /******* 조이스틱 속도 스케일링**********/
-#define MAX_LINEAR_VEL 1.25   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
-#define MAX_ANGULAR_VEL 2  //dynamic cmd_vel 모드에서 angular z 속도의 P gain에 해당
+#define MAX_LINEAR_VEL 1.0//1.25   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
+#define MAX_ANGULAR_VEL 2.0 //2  //dynamic cmd_vel 모드에서 angular z 속도의 P gain에 해당
 
 
 /********조이스틱 Axes & Butten*******/
