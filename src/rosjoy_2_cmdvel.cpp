@@ -530,6 +530,9 @@ int main(int argc, char **argv)
     if(operating_mode == Back_Hand_Control_){
       teleop_onoff_msg.data = 3;
     }
+    else if(operating_mode == TORQUE_OFF){
+      teleop_onoff_msg.data = 4;
+    }
     else if(!(operating_mode == JoyNotUse)){
       cmd_vel_pub.publish(cmd_vel_msg);
       teleop_onoff_msg.data = 1;
