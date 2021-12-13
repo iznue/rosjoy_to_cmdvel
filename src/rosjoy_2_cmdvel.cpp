@@ -21,7 +21,7 @@
 
 
 //modes
-#define RPM_MODE 1
+#define CAM_CONTROL_MODE 1//RPM_MODE 1
 #define CMD_VEL_MODE 2
 #define TORQUE_OFF 0
 #define DYNAMIC_CMD_VEL_MODE 3
@@ -184,11 +184,11 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   }
 
 
-  if(joymsg->buttons[BTTN_SQUARE]!=0 && joymsg->buttons[2]==0){                         //(네모)operating mode = [rpm_mode]
+  if(joymsg->buttons[BTTN_SQUARE]!=0 && joymsg->buttons[2]==0){                         //(네모)operating mode = [CAM_CONTROL_MODE]
     butt_count[0]++;
     if(butt_count[0]>countNum){
       CAN_mode_num = 4;
-      operating_mode = RPM_MODE;
+      operating_mode = CAM_CONTROL_MODE;//RPM_MODE;
       butt_count_reset();
       set_vels_zero();
     }
@@ -280,7 +280,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   if(rpm_limit_check(fb_vel+fb,rl_vel+rl)&&!stop_or_not){fb_vel+=fb; rl_vel+=rl;}
 
 
-  if(!stop_or_not){ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : cmd_vel_mode \n\n<cmd_vel>\n[linearX : %lf]\n[angularZ : %lf] ",fb_vel,rl_vel);}
+  if(!stop_or_not){ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(CAM_CTRL mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : cmd_vel_mode \n\n<cmd_vel>\n[linearX : %lf]\n[angularZ : %lf] ",fb_vel,rl_vel);}
 
 
   if(stop_or_not){stop_count++;}
@@ -296,8 +296,10 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
   if(stop_count >step*10){fb_vel=0.0; rl_vel=0.0; stop_or_not=false;stop_count=0;butt_count_reset();ROS_INFO("STOP_END");}
 
   }
-  else if(operating_mode == RPM_MODE){
+  else if(operating_mode == CAM_CONTROL_MODE){
 
+ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(CAM_CTRL mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : CAM_control_mode \n");
+/*
     int r_step=0, l_step=0;
 
     if(joymsg->axes[1]>0){l_step= 1;} //왼쪽 전진 :+ 0.0005
@@ -308,7 +310,7 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
       r_rpm+=r_step;
       l_rpm+=l_step;
     }
-    if(!stop_or_not){ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : rpm_mode \n<RPM>\n[LEFT : %d]\n[RIGHT : %d] ",l_rpm,r_rpm);}
+    if(!stop_or_not){ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(CAM_CTRL mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : rpm_mode \n<RPM>\n[LEFT : %d]\n[RIGHT : %d] ",l_rpm,r_rpm);}
 
     if(stop_or_not){stop_count++;}
     if(stop_count== step){r_rpm=r_rpm*0.9; l_rpm = l_rpm*0.8;ROS_INFO("STOPING..");}    //int step을 줄이면 더 빨리 멈춤
@@ -321,34 +323,34 @@ void JOYCallback(const sensor_msgs::Joy::ConstPtr& joymsg)
     if(stop_count==step*8){r_rpm=r_rpm*0.7; l_rpm = l_rpm*0.7;ROS_INFO("STOPING..");}
     if(stop_count==step*9){fb_vel=r_rpm*0.7; l_rpm = l_rpm*0.7;ROS_INFO("STOPING..");}
     if(stop_count >step*10){r_rpm=0.0; l_rpm=0.0; stop_or_not=false;stop_count=0;butt_count_reset();ROS_INFO("STOP_END");}
-
+*/
   }
   else if(operating_mode == DYNAMIC_CMD_VEL_MODE){
 
     fb_vel = MAX_LINEAR_VEL*(joymsg->axes[AXES_LEFT_UPDOWN]);
     rl_vel = MAX_ANGULAR_VEL*(joymsg->axes[AXES_RIGHT_RL]);
-    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : DYNAMIC_CMD_VEL_MODE \n\n<dynamic_cmd_vel>\n[linearX : %lf]\n[angularZ : %lf]",fb_vel,rl_vel);
+    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(CAM_CTRL mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : DYNAMIC_CMD_VEL_MODE \n\n<dynamic_cmd_vel>\n[linearX : %lf]\n[angularZ : %lf]",fb_vel,rl_vel);
 
   }
   else if(operating_mode == ONE_HAND){
 
     fb_vel = MAX_LINEAR_VEL*(joymsg->axes[1]);
     rl_vel = MAX_ANGULAR_VEL*(joymsg->axes[0]);
-    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : ONE_HAND_MODE \n\n<One_Hand_cmd_vel>\n[linearX : %lf]\n[angularZ : %lf]",fb_vel,rl_vel);
+    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(CAM_CTRL mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : ONE_HAND_MODE \n\n<One_Hand_cmd_vel>\n[linearX : %lf]\n[angularZ : %lf]",fb_vel,rl_vel);
 
   }
   else if(operating_mode == TORQUE_OFF){
 
-    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : TORQUE_OFF \n");
+    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(CAM_CTRL mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : TORQUE_OFF \n");
   }
   else if(operating_mode == JoyNotUse){
 
-    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : JoyNotUse \n");
+    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(CAM_CTRL mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : JoyNotUse \n");
   }
 
   else if(operating_mode == Back_Hand_Control_){
 
-    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(RPM mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : Back_Hand_Control_ \n");
+    ROS_INFO("\n======================\n   (DYNAMIC_CMD_VEL)\n(CAM_CTRL mode)(CMD_VEL mode)\n      (TQ_OFF)\n======================\nMODE : Back_Hand_Control_ \n");
   }
 }
 /*=========================================== JOY Callback함수 ============================================*/
@@ -532,6 +534,9 @@ int main(int argc, char **argv)
     }
     else if(operating_mode == TORQUE_OFF){
       teleop_onoff_msg.data = 4;
+    }
+    else if((operating_mode == CAM_CONTROL_MODE)){
+      teleop_onoff_msg.data = 5;
     }
     else if(!(operating_mode == JoyNotUse)){
       cmd_vel_pub.publish(cmd_vel_msg);
