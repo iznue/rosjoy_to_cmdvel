@@ -41,6 +41,7 @@
 //#define AXES_RIGHT_UPDOWN -1
 /*#define*/ int AXES_RIGHT_RL = 3;
 
+
 /*#define*/ int BTTN_TRIANGLE = 2;
 /*#define*/ int BTTN_SQUARE = 3;
 /*#define*/ int BTTN_X = 0;

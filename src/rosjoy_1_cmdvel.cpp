@@ -30,8 +30,8 @@
 #define Back_Hand_Control_ 6
 
 /******* 조이스틱 속도 스케일링**********/
-#define MAX_LINEAR_VEL 1.25//1.25   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
-#define MAX_ANGULAR_VEL 2.0 //2  //dynamic cmd_vel 모드에서 angular z 속도의 P gain에 해당
+#define MAX_LINEAR_VEL 0.5//1.25   //dymanic cmd_vel 모드에서 linear x 속도의 P gain에 해당
+#define MAX_ANGULAR_VEL 1.0 //2  //dynamic cmd_vel 모드에서 angular z 속도의 P gain에 해당
 
 
 /********조이스틱 Axes & Butten*******/
@@ -398,7 +398,7 @@ void set_vels_zero(void)
 /*============================= main 함수 ====================================*/
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "rosjoy_2_cmdvel");
+  ros::init(argc, argv, "rosjoy_1_cmdvel");
   ros::NodeHandle nh;
 
   ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
